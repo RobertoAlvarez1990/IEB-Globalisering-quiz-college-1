@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz: Wereldeconomie & Ontwikkeling</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --success: #16a34a;
+            --error: #dc2626;
+            --border: #e2e8f0;
+            --feedback-bg-correct: #f0fdf4;
+            --feedback-bg-wrong: #fef2f2;
+            --info-bg: #eff6ff;
+            --info-border: #3b82f6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .quiz-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 750px;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+
+        .header {
+            margin-bottom: 30px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
+        h1 {
+            font-size: 1.35rem;
+            margin-bottom: 25px;
+            line-height: 1.5;
+            color: var(--text);
+        }
+
+        .options-container {
+            display: grid;
+            gap: 12px;
+        }
+
+        .option {
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            padding: 16px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .option:hover:not(.disabled) {
+            border-color: var(--primary);
+            background-color: #f5f3ff;
+        }
+
+        .option.correct {
+            border-color: var(--success);
+            background-color: var(--feedback-bg-correct);
+            color: #166534;
+            font-weight: 600;
+        }
+
+        .option.wrong {
+            border-color: var(--error);
+            background-color: var(--feedback-bg-wrong);
+            color: #991b1b;
+        }
+
+        .option.disabled {
+            cursor: default;
+        }
+
+        .feedback-area {
+            margin-top: 25px;
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .feedback-box {
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            border-left: 4px solid transparent;
+            margin-bottom: 15px;
+        }
+
+        .feedback-box.choice {
+            background-color: #f1f5f9;
+            border-left-color: #64748b;
+        }
+
+        .feedback-box.choice.correct-choice {
+            background-color: var(--feedback-bg-correct);
+            border-left-color: var(--success);
+        }
+
+        .feedback-box.choice.wrong-choice {
+            background-color: var(--feedback-bg-wrong);
+            border-left-color: var(--error);
+        }
+
+        .feedback-box.explanation {
+            background-color: var(--info-bg);
+            border-left-color: var(--info-border);
+            color: #1e40af;
+        }
+
+        .btn-container {
+            margin-top: 30px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button:disabled {
+            background-color: #cbd5e1;
+            cursor: not-allowed;
+        }
+
+        .result-screen {
+            text-align: center;
+            display: none;
+        }
+
+        .score-circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: #f5f3ff;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 0 auto 20px;
+            border: 4px solid var(--primary);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="quiz-container">
+        <div id="question-screen">
+            <div class="header">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress"></div>
+                </div>
+                <div class="stats">
+                    <span id="counter">Vraag 1 van 7</span>
+                    <span id="score">Score: 0</span>
+                </div>
+            </div>
+
+            <h1 id="question-text">Vraag wordt geladen...</h1>
+
+            <div class="options-container" id="options"></div>
+
+            <div id="feedback-area" class="feedback-area">
+                <div id="choice-feedback" class="feedback-box choice"></div>
+                <div id="explanation-feedback" class="feedback-box explanation"></div>
+            </div>
+
+            <div class="btn-container">
+                <button id="next-btn" disabled>Volgende Vraag</button>
+            </div>
+        </div>
+
+        <div id="result-screen" class="result-screen">
+            <h1>Quiz Voltooid!</h1>
+            <div class="score-circle" id="final-score">0</div>
+            <p id="result-message" style="margin-bottom: 25px;"></p>
+            <button onclick="location.reload()">Opnieuw Starten</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                q: "Welke van de volgende inkomenscategorieën wordt door de Wereldbank gebruikt en omvat landen met een Bruto Nationaal Inkomen (BNI) per hoofd van de bevolking tussen $976 en $3.855?",
+                options: [
+                    "Minst Ontwikkelde Landen (MOL)",
+                    "Hogemiddeninkomenslanden",
+                    "Lageinkomenslanden",
+                    "Lagemiddeninkomenslanden"
+                ],
+                correct: 3,
+                optionsFeedback: [
+                    "Niet juist. MOL is een VN-classificatie op basis van méér dan alleen inkomen (zoals HAI en EVI).",
+                    "Niet juist. Hogemiddeninkomenslanden hebben volgens de bron een BNI tussen $3.856 en $11.905.",
+                    "Niet juist. Deze categorie omvat landen met een BNI lager dan $975.",
+                    "Correct! Dit is de exacte range die de Wereldbank hanteert voor Lagemiddeninkomenslanden."
+                ],
+                generalFeedback: "De Wereldbank hanteert vier klassen: Lage inkomens (<$975), Lagemidden ($976-$3.855), Hogemidden ($3.856-$11.905) en Hoge inkomens (>$11.905)."
+            },
+            {
+                q: "De Verenigde Naties classificeren een land als een 'Minst Ontwikkeld Land' (MOL) op basis van drie criteria. Een van deze criteria is de 'Human Assets Index' (HAI). Welk van de volgende indicatoren maakt deel uit van de meting van de HAI?",
+                options: [
+                    "Instabiliteit van de landbouwproductie",
+                    "Het inkomen per hoofd van de bevolking",
+                    "Maternal mortality ratio (moedersterfte)",
+                    "Aandeel van de landbouw in de economie"
+                ],
+                correct: 2,
+                optionsFeedback: [
+                    "Niet juist. Dit is een onderdeel van de Economic and Environmental Vulnerability Index (EVI).",
+                    "Niet juist. Inkomen per hoofd is een apart criterium van de VN, naast de HAI en EVI.",
+                    "Correct! HAI meet het menselijk potentieel via de Health Index (o.a. moedersterfte) en Education Index.",
+                    "Niet juist. Dit is een economische structuurvariabele die onder de EVI valt."
+                ],
+                generalFeedback: "De HAI (Human Assets Index) richt zich op gezondheid en onderwijs. Naast moedersterfte vallen hier ook ondervoeding en de alfabetiseringsgraad onder."
+            },
+            {
+                q: "Waarom is de Koopkrachtpariteit (Purchasing Power Parity - PPP) een meer accurate maatstaf dan nominale wisselkoersen voor het vergelijken van de levensstandaard tussen landen?",
+                options: [
+                    "Omdat PPP zich uitsluitend baseert op de prijzen van internationaal verhandelde goederen.",
+                    "Omdat PPP de omvang van de informele economie meerekent.",
+                    "Omdat PPP corrigeert voor verschillen in de kosten van levensonderhoud.",
+                    "Omdat PPP de inkomensongelijkheid binnen een land weerspiegelt."
+                ],
+                correct: 2,
+                optionsFeedback: [
+                    "Niet juist. PPP kijkt juist naar een breed mandje goederen, waaronder lokale diensten.",
+                    "Niet juist. PPP meet prijzen, niet de schaduweconomie (informele sector).",
+                    "Correct! Omdat de kosten van levensonderhoud in arme landen lager zijn, wordt de reële koopkracht in dollars vaak onderschat. PPP corrigeert dit.",
+                    "Niet juist. PPP is een gemiddelde en zegt niets over hoe het geld verdeeld is over de bevolking."
+                ],
+                generalFeedback: "PPP maakt verhoudingen realistischer. De bron stelt dat de reële koopkracht anders wordt onderschat omdat basisbehoeften in armere landen vaak goedkoper zijn."
+            },
+            {
+                q: "De Human Development Index (HDI) is een samengestelde index die verder kijkt dan alleen inkomen. Welke van de volgende dimensies is GEEN van de drie hoofdvariabelen van de HDI?",
+                options: [
+                    "Levensstandaard",
+                    "Kennis",
+                    "Economische gelijkheid",
+                    "Volksgezondheid"
+                ],
+                correct: 2,
+                optionsFeedback: [
+                    "Niet juist. Levensstandaard (GNI per capita) is een van de drie pijlers.",
+                    "Niet juist. Kennis (gemiddelde en verwachte scholingsjaren) is een essentieel onderdeel.",
+                    "Correct! Hoewel belangrijk voor ontwikkeling, zit economische gelijkheid niet in de standaard HDI-berekening.",
+                    "Niet juist. Volksgezondheid (levensverwachting bij geboorte) is de eerste pijler."
+                ],
+                generalFeedback: "De HDI meet socie-economische vooruitgang via: 1. Volksgezondheid, 2. Kennis en 3. Levensstandaard."
+            },
+            {
+                q: "De 'Economic and Environmental Vulnerability Index' (EVI) is een cruciaal onderdeel van de VN-criteria voor MOL. Welk van de volgende kenmerken duidt op een hoge kwetsbaarheid volgens de EVI?",
+                options: [
+                    "Een hoog percentage van de bevolking dat in kustgebieden woont.",
+                    "Een hoog percentage volwassenen dat kan lezen en schrijven.",
+                    "Een gediversifieerde export van zowel goederen als diensten.",
+                    "Een stabiel democratisch politiek stelsel."
+                ],
+                correct: 0,
+                optionsFeedback: [
+                    "Correct! Het aandeel bevolking in lage kustgebieden maakt een land ecologisch kwetsbaar voor natuurrampen.",
+                    "Niet juist. Dit wijst op een sterke HAI, niet op ecologische kwetsbaarheid.",
+                    "Niet juist. Exportconcentratie (één product) is juist een risico; diversificatie is een teken van stabiliteit.",
+                    "Niet juist. Hoewel politiek belangrijk, is dit geen variabele die in de EVI-score wordt gemeten."
+                ],
+                generalFeedback: "De EVI kijkt naar schokken (zoals natuurrampen) en blootstelling (zoals wonen in kustgebieden of afgelegen ligging)."
+            },
+            {
+                q: "Wat is een fundamenteel onderscheid in de benadering van armoede tussen de classificatie van de Wereldbank (op basis van BNI) en de Human Development Index (HDI)?",
+                options: [
+                    "De Wereldbank-classificatie is alleen van toepassing op ontwikkelingslanden, de HDI op alle landen.",
+                    "De Wereldbank richt zich op absolute armoede, terwijl de HDI zich richt op relatieve armoede.",
+                    "De Wereldbank meet welvaart als een zuiver economisch concept, terwijl de HDI een bredere definitie van welzijn hanteert.",
+                    "De Wereldbank gebruikt koopkrachtpariteit (PPP) in haar berekeningen, terwijl de HDI dat niet doet."
+                ],
+                correct: 2,
+                optionsFeedback: [
+                    "Niet juist. De Wereldbank classificeert álle landen (ook de hoge inkomenslanden).",
+                    "Niet juist. Beide kunnen gebruikt worden voor zowel absolute als relatieve analyses.",
+                    "Correct! De Wereldbank kijkt puur naar inkomen ($), terwijl de HDI kijkt naar 'welvaart én welzijn'.",
+                    "Niet juist. De HDI gebruikt juist ook PPP-gecorrigeerd inkomen voor de component levensstandaard."
+                ],
+                generalFeedback: "Zoals in de bron vermeld: de HDI wordt beschreven als een maatstaf voor 'socio-economic progress', terwijl de Wereldbank zich beperkt tot de economische indeling."
+            },
+            {
+                q: "De aanwezigheid van een grote schaduweconomie, inclusief de informele sector en zelfvoorziening, compliceert de meting van armoede. Wat is het meest directe gevolg hiervan voor metingen zoals het BNI per hoofd van de bevolking?",
+                options: [
+                    "Het leidt tot een overschatting van de welvaart omdat deze activiteiten niet belast worden.",
+                    "Het leidt tot een onderschatting van de daadwerkelijke economische activiteit en levensstandaard.",
+                    "Het heeft geen invloed omdat het BNI per definitie alleen de formele economie meet.",
+                    "Het vertekent de koopkrachtpariteit (PPP) maar heeft geen effect op het nominale BNI."
+                ],
+                correct: 1,
+                optionsFeedback: [
+                    "Niet juist. Als activiteiten niet geteld worden, lijkt het land armer dan het is (onderschatting).",
+                    "Correct! Omdat informele sector, zelfvoorziening en ruilhandel niet geregistreerd worden, is de werkelijke welvaart vaak hoger dan het officiële BNI aangeeft.",
+                    "Niet juist. Het heeft juist wel invloed op de bruikbaarheid van de cijfers voor vergelijking.",
+                    "Niet juist. Het heeft een groot effect op het nominale BNI omdat een groot deel van de economie 'onzichtbaar' blijft."
+                ],
+                generalFeedback: "De schaduweconomie (informele sector, zelfvoorziening, loon in natura) is een belangrijke bron van onderschatting in ontwikkelingslanden."
+            }
+        ];
+
+        let currentIdx = 0;
+        let scoreCount = 0;
+        let answered = false;
+
+        const qText = document.getElementById('question-text');
+        const optCont = document.getElementById('options');
+        const fArea = document.getElementById('feedback-area');
+        const choiceFeedback = document.getElementById('choice-feedback');
+        const explanationFeedback = document.getElementById('explanation-feedback');
+        const nextBtn = document.getElementById('next-btn');
+
+        function loadQuestion() {
+            answered = false;
+            nextBtn.disabled = true;
+            fArea.style.display = 'none';
+            nextBtn.innerText = currentIdx === questions.length - 1 ? "Bekijk Resultaat" : "Volgende Vraag";
+
+            const item = questions[currentIdx];
+            qText.innerText = item.q;
+            optCont.innerHTML = "";
+
+            item.options.forEach((opt, i) => {
+                const div = document.createElement('div');
+                div.className = 'option';
+                div.innerText = opt;
+                div.onclick = () => handleSelect(i, div);
+                optCont.appendChild(div);
+            });
+
+            updateUI();
+        }
+
+        function handleSelect(idx, el) {
+            if (answered) return;
+            answered = true;
+            nextBtn.disabled = false;
+
+            const currentQ = questions[currentIdx];
+            const isCorrect = idx === currentQ.correct;
+            const options = document.querySelectorAll('.option');
+
+            // Feedback tonen
+            fArea.style.display = 'block';
+            
+            // 1. Specifieke feedback voor de gekozen optie
+            choiceFeedback.innerText = `Jouw antwoord: ${currentQ.optionsFeedback[idx]}`;
+            choiceFeedback.className = `feedback-box choice ${isCorrect ? 'correct-choice' : 'wrong-choice'}`;
+
+            // 2. Algemene uitleg van het juiste antwoord
+            const correctText = currentQ.options[currentQ.correct];
+            explanationFeedback.innerHTML = `<strong>Het juiste antwoord is: ${correctText}</strong><br>${currentQ.generalFeedback}`;
+
+            if (isCorrect) {
+                scoreCount++;
+                el.classList.add('correct');
+            } else {
+                el.classList.add('wrong');
+                options[currentQ.correct].classList.add('correct');
+            }
+
+            options.forEach(o => o.classList.add('disabled'));
+            document.getElementById('score').innerText = `Score: ${scoreCount}`;
+        }
+
+        function updateUI() {
+            document.getElementById('progress').style.width = `${(currentIdx / questions.length) * 100}%`;
+            document.getElementById('counter').innerText = `Vraag ${currentIdx + 1} van ${questions.length}`;
+        }
+
+        nextBtn.onclick = () => {
+            currentIdx++;
+            if (currentIdx < questions.length) {
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        };
+
+        function showResults() {
+            document.getElementById('question-screen').style.display = 'none';
+            document.getElementById('result-screen').style.display = 'block';
+            document.getElementById('final-score').innerText = `${scoreCount}/${questions.length}`;
+            const msg = document.getElementById('result-message');
+            
+            if (scoreCount === questions.length) msg.innerText = "Uitmuntend! Je bent volledig op de hoogte van de economische maatstaven.";
+            else if (scoreCount >= 5) msg.innerText = "Goed gedaan! Je hebt een sterke basiskennis van hoe landen worden ingedeeld.";
+            else msg.innerText = "Bekijk de LessonUp nog eens goed, vooral de criteria van de VN (MOL) en de verschillen tussen BNI en HDI.";
+        }
+
+        loadQuestion();
+    </script>
+</body>
+</html>
